@@ -33,12 +33,11 @@ def calu_file_md5(localpath: str) -> str:
     output = cp.stdout.strip()
     if IS_MACOS:
         return re.split(r"\s+", output)[-1]
-    elif IS_LINUX:
+    if IS_LINUX:
         return re.split(r"\s+", output)[0]
-    else:  # windows
-        cn = output.split("CertUtil")[0].strip()
-        cn = cn.split(":")[-1].strip().replace(" ", "")
-        return cn
+    # windows
+    cn = output.split("CertUtil")[0].strip()
+    return cn.split(":")[-1].strip().replace(" ", "")
 
 
 def calu_md5(buf: str | bytes, encoding="utf-8") -> str:
@@ -108,10 +107,7 @@ def padding_key(key: str | bytes, length: int = 0, value: bytes = b"\xff") -> by
         raise ValueError("key 长度不能超过目标长度")
 
     pad_len = length - len(key)
-    if value:
-        pad_bytes = value * (pad_len)
-    else:
-        pad_bytes = random_sys_bytes(pad_len)
+    pad_bytes = value * pad_len if value else random_sys_bytes(pad_len)
     return key + pad_bytes
 
 
@@ -125,8 +121,7 @@ def padding_size(length: int, block_size: int, ceil: bool = True) -> int:
     remainder = length % block_size
     if ceil:
         return (block_size - remainder) * int(remainder != 0) + length
-    else:
-        return length - remainder
+    return length - remainder
 
 
 def pkcs7_padding(data: bytes, block_size):
@@ -169,10 +164,7 @@ def generate_key_iv(
         h.update(data)
         return h.digest()
 
-    if algo == "md5":
-        temp = pbkdf1("md5", password, salt, 1, 16)
-    else:
-        temp = b""
+    temp = pbkdf1("md5", password, salt, 1, 16) if algo == "md5" else b""
 
     fd = temp
     while len(fd) < key_size + iv_size:

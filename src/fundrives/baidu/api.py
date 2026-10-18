@@ -477,10 +477,9 @@ class BaiduPCSApi:
         """
 
         info = self._baidupcs.share(*remotepaths, password=password, period=period)
-        link = PcsSharedLink.from_(info)._replace(
+        return PcsSharedLink.from_(info)._replace(
             paths=list(remotepaths), password=password
         )
-        return link
 
     def list_shared(self, page: int = 1) -> list[PcsSharedLink]:
         """分页列出当前用户的分享链接。
@@ -781,9 +780,8 @@ class BaiduPCSApi:
         info = self._baidupcs.m3u8_stream(remotepath, type)
         if info.get("m3u8_content"):
             return info["m3u8_content"]
-        else:
-            # Here should be a error
-            return ""
+        # Here should be a error
+        return ""
 
     def rapid_upload_info(
         self, remotepath: str, check: bool = True
@@ -883,9 +881,7 @@ class BaiduPCSApi:
             )
 
         shared_paths = deque(self.shared_paths(shared_url))
-        _remote_dirs: dict[PcsSharedPath, str] = dict(
-            [(sp, remote_dir) for sp in shared_paths]
-        )
+        _remote_dirs: dict[PcsSharedPath, str] = dict.fromkeys(shared_paths, remote_dir)
         _dir_exists: set[str] = set()
 
         while shared_paths:

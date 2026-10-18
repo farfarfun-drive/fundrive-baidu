@@ -28,14 +28,14 @@ def retry(times: int, except_callback: Callable[..., Any] | None = None):
 
             for i in range(1, times + 1):
                 try:
-                    r = func(*args, **kwargs)
-                    return r
+                    return func(*args, **kwargs)
                 except Exception as err:
                     if except_callback is not None:
                         except_callback(err, i)
 
                     if i == times:
                         raise err
+            return None
 
         return retry_it
 

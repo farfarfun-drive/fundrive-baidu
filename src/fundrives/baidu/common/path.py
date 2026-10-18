@@ -42,10 +42,7 @@ def join_path(source: PathLike, dest: PathLike) -> str:
         p = path.split(":", 1)[-1]
         if not has_root:
             return p[1:]
-        else:
-            return p
-    else:
-        if not has_root:
-            return path[1:]
-        else:
-            return path
+        return p
+    if not has_root:
+        return path[1:]
+    return path

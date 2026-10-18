@@ -27,20 +27,24 @@ class SimpleCryptography:
 
         # decrypt_byte_map[encrypted_char] -> ori_char
         self._decrypt_byte_map = bytes(
-            bytearray([c for _, c in sorted(zip(_byte_map, range(1 << 8)))])
+            bytearray(
+                [c for _, c in sorted(zip(_byte_map, range(1 << 8), strict=True))]
+            )
         )
 
         self._key = key
 
     def encrypt(self, data):
-        data = bytes(bytearray(data))  # copy
-        crypt(data, self._encrypt_byte_map, len(data))
-        return data
+        # 必须是 bytearray：crypt() 原地改写，bytes 不支持下标赋值。
+        # 原先写的是 bytes(bytearray(data))，任何调用都直接 TypeError。
+        buf = bytearray(data)  # copy
+        crypt(buf, self._encrypt_byte_map, len(buf))
+        return bytes(buf)
 
     def decrypt(self, data):
-        data = bytes(bytearray(data))  # copy
-        crypt(data, self._decrypt_byte_map, len(data))
-        return data
+        buf = bytearray(data)  # copy
+        crypt(buf, self._decrypt_byte_map, len(buf))
+        return bytes(buf)
 
     def reset(self):
         pass

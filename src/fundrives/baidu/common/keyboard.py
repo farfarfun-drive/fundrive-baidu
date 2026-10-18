@@ -57,8 +57,7 @@ class KeyboardListener(threading.Thread):
 
         if os.name == "nt":
             return msvcrt.getch().decode("utf-8")
-        else:
-            return sys.stdin.read(1)
+        return sys.stdin.read(1)
 
     def getarrow(self):
         """Returns an arrow-key code after kbhit() has been called. Codes are
@@ -84,9 +83,8 @@ class KeyboardListener(threading.Thread):
         if os.name == "nt":
             return msvcrt.kbhit()
 
-        else:
-            dr, dw, de = select([sys.stdin], [], [], 0)
-            return dr != []
+        dr, dw, de = select([sys.stdin], [], [], 0)
+        return dr != []
 
     def run(self):
         while True:

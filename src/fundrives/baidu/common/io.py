@@ -72,12 +72,11 @@ def total_len(o: Any) -> int:
     if hasattr(o, "__len__"):
         return len(o)
 
-    if hasattr(o, "seekable"):
-        if o.seekable():
-            _offset = o.tell()
-            _len = o.seek(0, 2)
-            o.seek(_offset, 0)
-            return _len
+    if hasattr(o, "seekable") and o.seekable():
+        _offset = o.tell()
+        _len = o.seek(0, 2)
+        o.seek(_offset, 0)
+        return _len
 
     if hasattr(o, "len"):
         return o.len
@@ -111,10 +110,7 @@ class ChunkIO(IO):
 
     def read(self, size: int = -1) -> bytes | None:
         remain = self._size - self._offset
-        if size == -1:
-            size = remain
-        else:
-            size = min(size, remain)
+        size = remain if size == -1 else min(size, remain)
 
         data = self._io.read(size) or b""
         if data:
@@ -687,10 +683,9 @@ class AES256CBCDecryptIO(DecryptIO):
     def __len__(self) -> int:
         """The decrypted content length of `self._io`"""
 
-        avail_enc_len = padding_size(
+        return padding_size(
             self._io_len - self._io_init_offset, self.BLOCK_SIZE, ceil=False
         )
-        return avail_enc_len
 
     def _read_block(self, size: int = -1):
         """Read encrypted block to cache"""
@@ -780,13 +775,12 @@ def _decryptio_version1(
 
     if magic_code == SimpleEncryptIO.MAGIC_CODE:
         return SimpleDecryptIO(io, encrypt_password, b"", total_origin_len)
-    elif magic_code == ChaCha20EncryptIO.MAGIC_CODE:
+    if magic_code == ChaCha20EncryptIO.MAGIC_CODE:
         return ChaCha20DecryptIO(io, encrypt_password, nonce_or_iv, total_origin_len)
-    elif magic_code == AES256CBCEncryptIO.MAGIC_CODE:
+    if magic_code == AES256CBCEncryptIO.MAGIC_CODE:
         return AES256CBCDecryptIO(io, encrypt_password, nonce_or_iv, total_origin_len)
-    else:
-        logger.warning(f"Unknown magic_code: {magic_code!r}")
-        return None
+    logger.warning(f"Unknown magic_code: {magic_code!r}")
+    return None
 
 
 def _decryptio_version3(
@@ -1062,7 +1056,7 @@ class AutoDecryptRequest:
         left = list(range(start, end, self._max_chunk_size))
         left.append(end)
         right = [i - 1 for i in left]
-        return [(s, e) for s, e in zip(left[:-1], right[1:])]
+        return list(zip(left[:-1], right[1:], strict=True))
 
 
 class RangeRequestIO(IO):
@@ -1156,14 +1150,13 @@ class EncryptType(Enum):
         io_len = total_len(io)
         if self == EncryptType.No:
             return io
-        elif self == EncryptType.Simple:
+        if self == EncryptType.Simple:
             return SimpleEncryptIO(io, encrypt_password, io_len)
-        elif self == EncryptType.ChaCha20:
+        if self == EncryptType.ChaCha20:
             return ChaCha20EncryptIO(io, encrypt_password, io_len)
-        elif self == EncryptType.AES256CBC:
+        if self == EncryptType.AES256CBC:
             return AES256CBCEncryptIO(io, encrypt_password, io_len)
-        else:
-            raise ValueError(f"Unknown EncryptType: {self}")
+        raise ValueError(f"Unknown EncryptType: {self}")
 
 
 def reset_encrypt_io(io: IO | EncryptIO):

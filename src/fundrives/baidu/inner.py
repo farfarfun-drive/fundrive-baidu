@@ -7,7 +7,8 @@
 import os
 from base64 import standard_b64encode
 from collections import namedtuple
-from typing import Any, Mapping, NamedTuple
+from collections.abc import Mapping
+from typing import Any, NamedTuple
 from urllib.parse import unquote
 
 
@@ -32,8 +33,7 @@ class PcsRapidUploadInfo(NamedTuple):
         filename = os.path.basename(self.remotepath or "")
         if not filename:
             return ""
-        else:
-            return filename.replace(" ", "%20")
+        return filename.replace(" ", "%20")
 
     def cs3l(self) -> str:
         """生成 ``cs3l`` 协议的秒传链接。
@@ -240,9 +240,7 @@ class PcsSharedLink(NamedTuple):
         """
         if self.password:
             return True
-        if self.channel == 4:
-            return True
-        return False
+        return self.channel == 4
 
     def available(self) -> bool:
         """判断这条分享是否仍然有效。
@@ -253,10 +251,7 @@ class PcsSharedLink(NamedTuple):
         """
         if not self.paths:
             return False
-        if self.paths[0].startswith("/"):
-            return True
-        else:
-            return False
+        return bool(self.paths[0].startswith("/"))
 
 
 class PcsSharedPath(NamedTuple):

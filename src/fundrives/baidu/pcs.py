@@ -200,8 +200,7 @@ class BaiduPCS:
 
         if PCS_BAIDU_COM in url:
             return PCS_APP_ID
-        else:
-            return PAN_APP_ID
+        return PAN_APP_ID
 
     @property
     def bdstoken(self) -> str:
@@ -234,8 +233,7 @@ class BaiduPCS:
 
         if PCS_BAIDU_COM in url:
             return dict(PCS_HEADERS)
-        else:
-            return dict(PAN_HEADERS)
+        return dict(PAN_HEADERS)
 
     def _cookies_update(self, cookies: dict[str, str]) -> None:
         """把服务端新下发的 cookies 合并进当前会话。"""
@@ -277,7 +275,7 @@ class BaiduPCS:
             headers["Content-Type"] = data.content_type
 
         try:
-            resp = self._session.request(
+            return self._session.request(
                 method.value,
                 url,
                 params=params,
@@ -286,9 +284,8 @@ class BaiduPCS:
                 files=files,
                 **kwargs,
             )
-            return resp
         except Exception as err:
-            raise BaiduPCSError("BaiduPCS._request", cause=err)
+            raise BaiduPCSError("BaiduPCS._request", cause=err) from err
 
     def _request_get(
         self,
@@ -334,10 +331,7 @@ class BaiduPCS:
         :return: 存在返回 ``True``，否则返回 ``False``
         """
         r = self.meta(remotepath)
-        if r.get("error_code"):
-            return False
-        else:
-            return True
+        return not r.get("error_code")
 
     def is_file(self, remotepath: str) -> bool:
         """判断远程路径是否是文件。
@@ -348,10 +342,7 @@ class BaiduPCS:
         r = self.meta(remotepath)
         if r.get("error_code"):
             return False
-        if r["list"][0]["isdir"] == 0:
-            return True
-        else:
-            return False
+        return r["list"][0]["isdir"] == 0
 
     def is_dir(self, remotepath: str) -> bool:
         """判断远程路径是否是目录。
@@ -362,10 +353,7 @@ class BaiduPCS:
         r = self.meta(remotepath)
         if r.get("error_code"):
             return False
-        if r["list"][0]["isdir"] == 1:
-            return True
-        else:
-            return False
+        return r["list"][0]["isdir"] == 1
 
     @assert_ok
     def list(
@@ -1337,9 +1325,8 @@ class BaiduPCS:
 
                 if not info.get("urls"):
                     return None
-                else:
-                    # return info["urls"][0]["url"].replace("&htype=", "")
-                    return info["urls"][0]["url"]
+                # return info["urls"][0]["url"].replace("&htype=", "")
+                return info["urls"][0]["url"]
             except HTTPError:
                 # 403 code could occor at unavailable downloading url, #97
                 return None
@@ -1407,5 +1394,4 @@ class BaiduPCS:
         cn = resp.text
         if cn.startswith("{"):  # error
             return resp.json()
-        else:
-            return {"m3u8_content": cn}
+        return {"m3u8_content": cn}

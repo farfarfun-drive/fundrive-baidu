@@ -87,7 +87,10 @@ class MeDownloader(RangeRequestIO):
                 _fd = _path.open("wb")
         else:
             _offset = 0
-            _fd = open(self._localpath, "wb")
+            # SIM115: 这个 fd 故意跨方法存活 —— 存到 self._fd，由 work() 的 finally 关闭，
+            # 上下文管理器跨不了方法边界。上面两个分支用 _path.open() 做同一件事，
+            # 只是 ruff 认不出来才没被一起标记。
+            _fd = open(self._localpath, "wb")  # noqa: SIM115
 
         self._offset = _offset
         self._fd = _fd

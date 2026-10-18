@@ -38,8 +38,7 @@ def format_time(seconds: int) -> str:
             ft = ":" + ft
         tm //= unit
 
-    ft = f"{tm}days {ft}"
-    return ft
+    return f"{tm}days {ft}"
 
 
 def human_size(size: int) -> str:
@@ -51,7 +50,9 @@ def human_size(size: int) -> str:
     s = float(size)
     v = ""
     t = ""
-    for t in ["B", "KB", "MB", "GB", "TB"]:
+    # B007: t 在循环体内确实没被用到，但循环结束后（第 63 行）它就是选中的单位 ——
+    # 这里是故意让循环变量泄漏出来。按 ruff 的建议改名成 _t 会直接改坏返回值。
+    for t in ["B", "KB", "MB", "GB", "TB"]:  # noqa: B007
         if s < 1024.0:
             v = f"{s:3.1f}"
             break
@@ -85,8 +86,7 @@ def human_size_to_int(size_str: str) -> int:
         if size_str[i] in _nums_set:
             i += 1
             continue
-        else:
-            break
+        break
 
     if i == 0:
         return 0

@@ -33,11 +33,28 @@ CREATE TABLE IF NOT EXISTS {RAPID_UPLOAD_TABLE}
 )
 """
 
-RAPID_UPLOAD_TABLE_COLS = [
-    c.strip().split(" ", 1)[0]
-    for c in CREATE_RAPID_UPLOAD_TABLE.split("\n")
-    if c.startswith("    ")
-]
+
+def _parse_table_cols(ddl: str) -> list:
+    """从建表 DDL 里取出列名，按 DDL 里的顺序。
+
+    只认缩进 4 个空格的行，并跳过表级约束 —— 约束行与列定义行缩进相同，不排除的话
+    ``UNIQUE(slice_md5, ...)`` 会被当成一个列名。这里原先就是这样：解析出 14 个名字，
+    而 ``SELECT *`` 只有 13 列。结果一直是对的，纯粹因为 ``zip()`` 会按较短的一边截断，
+    恰好把末尾那个幻影名字丢掉 —— 一旦给 zip 加上 ``strict=True`` 就会立刻炸。
+    """
+    table_constraints = ("UNIQUE", "PRIMARY", "FOREIGN", "CHECK", "CONSTRAINT")
+    cols = []
+    for line in ddl.split("\n"):
+        if not line.startswith("    "):
+            continue
+        name = line.strip().split(" ", 1)[0]
+        if name.upper().startswith(table_constraints):
+            continue
+        cols.append(name)
+    return cols
+
+
+RAPID_UPLOAD_TABLE_COLS = _parse_table_cols(CREATE_RAPID_UPLOAD_TABLE)
 
 INSERT_RAPID_UPLOAD = f"""
 INSERT OR IGNORE INTO {RAPID_UPLOAD_TABLE}
@@ -130,7 +147,10 @@ class RapidUploadInfo:
             sql = f"SELECT * FROM {RAPID_UPLOAD_TABLE} WHERE id IN ({ids_str})"
             c = self._conn.cursor()
             c.execute(sql)
-            return [OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r)) for r in c.fetchall()]
+            return [
+                OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r, strict=True))
+                for r in c.fetchall()
+            ]
 
         if by_filename:
             condition = "order by filename"
@@ -163,7 +183,10 @@ class RapidUploadInfo:
 
         c = self._conn.cursor()
         c.execute(sql)
-        return [OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r)) for r in c.fetchall()]
+        return [
+            OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r, strict=True))
+            for r in c.fetchall()
+        ]
 
     def search(
         self,
@@ -206,7 +229,10 @@ class RapidUploadInfo:
 
         c = self._conn.cursor()
         c.execute(sql)
-        return [OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r)) for r in c.fetchall()]
+        return [
+            OrderedDict(zip(RAPID_UPLOAD_TABLE_COLS, r, strict=True))
+            for r in c.fetchall()
+        ]
 
     def delete(self, id: int):
         sql = f"DELETE FROM {RAPID_UPLOAD_TABLE} WHERE id = ?"
