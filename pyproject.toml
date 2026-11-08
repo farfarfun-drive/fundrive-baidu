@@ -1,6 +1,6 @@
 [project]
 name = "fundrive-baidu"
-version = "2.0.91"
+version = "2.0.96"
 description = "百度网盘（BaiduPCS）云存储 API 封装"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,9 +22,9 @@ email = "niuliangtao@qq.com"
 name = "farfarfun"
 email = "farfarfun@qq.com"
 [project.urls]
-Organization = "https://github.com/farfarfun-drive"
-Repository = "https://github.com/farfarfun-drive/fundrive-baidu"
-Releases = "https://github.com/farfarfun-drive/fundrive-baidu/releases"
+Organization = "https://github.com/farfarfun"
+Repository = "https://github.com/farfarfun/fundrive-baidu"
+Releases = "https://github.com/farfarfun/fundrive-baidu/releases"
 
 [build-system]
 requires = ["hatchling"]
