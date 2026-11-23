@@ -413,3 +413,49 @@ def test_transfer_shared_paths_delegates_with_all_params():
     api._baidupcs.transfer_shared_paths.assert_called_once_with(
         "/dir", [1, 2], 1, 2, "token", "https://pan.baidu.com/s/1abc"
     )
+
+
+def test_list_all_sub_paths_paginates_with_custom_size():
+    """`size < 100` 时不能误用硬编码 `< 100` 提前终止分页。"""
+    api = _api()
+    page1 = [MagicMock(name="p1"), MagicMock(name="p2")]
+    page2 = [MagicMock(name="p3")]
+    api.list_shared_paths = MagicMock(side_effect=[page1, page2])
+
+    result = api.list_all_sub_paths("/share", uk=1, share_id=2, bdstoken="tok", size=2)
+
+    assert len(result) == 3
+    assert api.list_shared_paths.call_count == 2
+
+
+def test_is_file_and_is_dir_return_false_on_empty_meta_list():
+    api = _api()
+    _mock_json(api, {"errno": 0, "list": []})
+
+    assert api.is_file("/empty") is False
+    assert api.is_dir("/empty") is False
+
+
+def test_transfer_shared_paths_handles_missing_inner_errno():
+    pcs = BaiduPCS(bduss="dummy-bduss", stoken="dummy-stoken", user_id=1)
+    resp = MagicMock()
+    resp.json.return_value = {"errno": 0, "info": [{"fsid": 1}]}
+    pcs._request = MagicMock(return_value=resp)
+
+    res = pcs.transfer_shared_paths(
+        "/dir", [1], 1, 2, "tok", "https://pan.baidu.com/s/1a"
+    )
+    assert res["errno"] == 0
+
+
+def test_download_link_closes_urlopen_response():
+    pcs = BaiduPCS(bduss="dummy-bduss", user_id=1)
+    ok = MagicMock()
+    ok.status = 200
+    ok.read.return_value = b'{"urls": [{"url": "https://example.invalid/f"}]}'
+
+    with patch("fundrives.baidu.pcs.urllib.request.urlopen", return_value=ok):
+        link = BaiduPCS.download_link.__wrapped__(pcs, "/close-check.bin")
+
+    assert link == "https://example.invalid/f"
+    ok.close.assert_called_once()

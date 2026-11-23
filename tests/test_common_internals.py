@@ -103,3 +103,28 @@ class TestHumanSize:
     def test_above_max_unit_falls_back(self):
         """超过 1024TB 时循环不会 break，兜底分支要把多除的那次乘回去。"""
         assert human_size(1024**5) == "1024 TB"
+
+
+class TestRapidUploadParams2:
+    def test_computes_hashes_and_closes_file_handles(self, tmp_path):
+        """`rapid_upload_params2` 必须通过上下文管理器关闭文件句柄。"""
+        import warnings
+
+        from fundrives.baidu.common.io import rapid_upload_params2
+
+        target = tmp_path / "sample.bin"
+        content = b"hello baidu rapid upload" * 100
+        target.write_bytes(content)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", ResourceWarning)
+            slice_md5, content_md5, content_crc32, size = rapid_upload_params2(target)
+
+        assert size == len(content)
+        assert len(slice_md5) == 32
+        assert len(content_md5) == 32
+        assert isinstance(content_crc32, int)
+        resource_warnings = [
+            w for w in caught if issubclass(w.category, ResourceWarning)
+        ]
+        assert resource_warnings == []

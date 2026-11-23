@@ -200,9 +200,11 @@ def rapid_upload_params(io: IO) -> tuple[str, str, int, int]:
 
 
 def rapid_upload_params2(localPath: Path) -> tuple[str, str, int, int]:
-    buf = localPath.open("rb").read(constant.OneM)
+    with localPath.open("rb") as f:
+        buf = f.read(constant.OneM)
     slice_md5 = calu_md5(buf[: 256 * constant.OneK])
-    content_crc32, content_md5 = calu_crc32_and_md5(localPath.open("rb"), constant.OneM)
+    with localPath.open("rb") as f:
+        content_crc32, content_md5 = calu_crc32_and_md5(f, constant.OneM)
     return slice_md5, content_md5, content_crc32, localPath.stat().st_size
 
 

@@ -978,6 +978,6 @@ class BaiduPCSApi:
                 shared_path, uk, share_id, bdstoken, page=page, size=size
             )
             sub_paths += sps
-            if len(sps) < 100:
+            if not sps or len(sps) < size:
                 break
         return sub_paths

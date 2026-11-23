@@ -8,6 +8,7 @@ import time
 import urllib
 from base64 import standard_b64encode
 from collections.abc import Callable
+from contextlib import closing
 from enum import Enum
 from pathlib import Path
 from typing import IO, Any, Literal
@@ -340,7 +341,7 @@ class BaiduPCS:
         :return: 是文件返回 ``True``；是目录或路径不存在均返回 ``False``
         """
         r = self.meta(remotepath)
-        if r.get("error_code"):
+        if r.get("error_code") or not r.get("list"):
             return False
         return r["list"][0]["isdir"] == 0
 
@@ -351,7 +352,7 @@ class BaiduPCS:
         :return: 是目录返回 ``True``；是文件或路径不存在均返回 ``False``
         """
         r = self.meta(remotepath)
-        if r.get("error_code"):
+        if r.get("error_code") or not r.get("list"):
             return False
         return r["list"][0]["isdir"] == 1
 
@@ -1140,7 +1141,7 @@ class BaiduPCS:
 
         resp = self._request(Method.Post, url, headers=hdrs, params=params, data=data)
         info = resp.json()
-        if info.get("info") and info["info"][0]["errno"]:
+        if info.get("info") and info["info"][0].get("errno"):
             info["errno"] = info["info"][0]["errno"]
         return info
 
@@ -1300,24 +1301,25 @@ class BaiduPCS:
                 url + "?" + params_str, headers=headers, method="GET"
             )  # type: ignore
             try:
-                resp = urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT[1])  # type: ignore
+                with closing(
+                    urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT[1])  # type: ignore
+                ) as resp:
+                    # Error: "user is not authorized"
+                    # 调用过于频繁时会走到这里；重试有上限，耗尽后返回 None，
+                    # 不能像原实现那样无限 `continue` 下去。
+                    if resp.status != 200:
+                        if attempt == DOWNLOAD_LINK_MAX_RETRIES - 1:
+                            logger.warning(
+                                "`BaiduPCS.download_link` 重试 {} 次后仍未拿到下载地址，"
+                                "最后一次状态码 {}",
+                                DOWNLOAD_LINK_MAX_RETRIES,
+                                resp.status,
+                            )
+                            return None
+                        time.sleep(DOWNLOAD_LINK_RETRY_INTERVAL)
+                        continue
 
-                # Error: "user is not authorized"
-                # 调用过于频繁时会走到这里；重试有上限，耗尽后返回 None，
-                # 不能像原实现那样无限 `continue` 下去。
-                if resp.status != 200:
-                    if attempt == DOWNLOAD_LINK_MAX_RETRIES - 1:
-                        logger.warning(
-                            "`BaiduPCS.download_link` 重试 {} 次后仍未拿到下载地址，"
-                            "最后一次状态码 {}",
-                            DOWNLOAD_LINK_MAX_RETRIES,
-                            resp.status,
-                        )
-                        return None
-                    time.sleep(DOWNLOAD_LINK_RETRY_INTERVAL)
-                    continue
-
-                info = json.loads(resp.read())
+                    info = json.loads(resp.read())
 
                 # This error is gotten when remote path is blocked
                 if info.get("host") == "issuecdn.baidupcs.com":
