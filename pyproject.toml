@@ -22,9 +22,9 @@ email = "niuliangtao@qq.com"
 name = "farfarfun"
 email = "farfarfun@qq.com"
 [project.urls]
-Organization = "https://github.com/farfarfun"
-Repository = "https://github.com/farfarfun/fundrive-baidu"
-Releases = "https://github.com/farfarfun/fundrive-baidu/releases"
+Organization = "https://github.com/farfarfun-drive"
+Repository = "https://github.com/farfarfun-drive/fundrive-baidu"
+Releases = "https://github.com/farfarfun-drive/fundrive-baidu/releases"
 
 [build-system]
 requires = ["hatchling"]
@@ -42,9 +42,9 @@ src = ["src", "tests"]
 extend-exclude = ["*.md"]
 
 # ---------------------------------------------------------------------------
-# 以下 select / ignore 是 fundrive 工作区五个仓库**共用的基线**，逐字相同。
-# 改动任何一条都要同步到另外四个仓库（fundrive / fundrive-alipan / fundrive-baidu /
-# fundrive-lanzou / fundrive-quark），否则"统一"立刻又散掉。
+# 以下 select / ignore 是 fundrive 工作区六个仓库**共用的基线**，逐字相同。
+# 改动任何一条都要同步到全部仓库（fundrive / fundrive-alipan / fundrive-baidu /
+# fundrive-lanzou / fundrive-pan115 / fundrive-quark），否则"统一"立刻又散掉。
 # 基线的取舍记录在 fundrive-dev 的 docs/project/project-governance/
 # 004-known-deviations.md 第 6 条。
 # ---------------------------------------------------------------------------
