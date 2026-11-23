@@ -1,6 +1,6 @@
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ClassVar
 
 from .keyboard import KeyboardListener
 
@@ -29,7 +29,7 @@ class KeyHandler:
 class KeyboardMonitor:
     """集中注册并分发终端按键事件。"""
 
-    KEY_HANDLERS: list[KeyHandler] = []
+    KEY_HANDLERS: ClassVar[list[KeyHandler]] = []
 
     @classmethod
     def register(cls, key_handler: KeyHandler) -> None:
